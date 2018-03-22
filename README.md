@@ -3,6 +3,7 @@ A tiny shell script that listens to ssh logs and bans any IPs trying to log into
 
 ## Installation
 Before using the script make sure the IP(s) that you trust are in the */usr/hosts.allow* file to prevent you from locking yourself out accidentily.
+Make sure your ssh server (I made this for openSSH and can't guarantee it working on anything else) is using TCP wrapper or obeying the hosts.deny and allow rules. 
 
 You probably want to make sure the script is listening to the right service, so check if
 ```
