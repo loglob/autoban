@@ -1,0 +1,41 @@
+#!/bin/sh
+# this is where banned Ips are written to. Make sure this either is /etc/hosts.deny or is referenced in it. Make sure to add your own IP(s) to /etc/hosts.allow
+DenyFile="/usr/autoban/banned"
+# the name of the service your ssh server runs under. Usually sshd or ssh, find out by trying to view their journalctl logs
+SSHUnit="ssh"
+
+banIP()
+{
+	subnet="$(echo $1 | cut -d"." -f 1-3)."
+
+	if(grep -q "$subnet" "$DenyFile")
+	then
+	# an IP on this subnet has been banned before
+		echo "Banned Subnet	$subnet"
+		echo "$subnet" >> $DenyFile
+	else
+		echo "Banned IP	$1"
+		echo "$1" >> $DenyFile
+	fi
+}
+
+if [ ! -f $DenyFile ]; then
+	touch $DenyFile
+	chmod 644 $DenyFile
+fi
+
+journalctl -u "$SSHUnit" -f | while read i
+do
+	msg=$(echo "$i" | cut -d" " -f 6-)
+	RED='\033[1;31m'
+	NC='\033[0m'
+
+	#echo $msg
+
+	case $msg in
+		"Failed password for root from "*)
+			echo "${RED}Detected root try${NC}"
+			banIP "$(echo $msg | cut -d" " -f 6)"
+		;;
+	esac
+done
