@@ -1,6 +1,6 @@
 #!/bin/sh
 # this is where banned Ips are written to. Make sure this either is /etc/hosts.deny or is referenced in it. Make sure to add your own IP(s) to /etc/hosts.allow
-DenyFile="/usr/autoban/banned"
+DenyFile="/etc/hosts.deny"
 # the name of the service your ssh server runs under. Usually sshd or ssh, find out by trying to view their journalctl logs
 SSHUnit="ssh"
 
