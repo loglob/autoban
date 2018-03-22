@@ -25,3 +25,5 @@ Then, change the first definition in the script to the same path, like this:
 ```
 DenyFile="/usr/autoban.banned"
 ```
+
+The script is designed to run in the background so you may want to add it to /etc/rc.local or use some other method to make it start up with the computer.
