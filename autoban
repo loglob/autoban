@@ -12,10 +12,10 @@ banIP()
 	then
 	# an IP on this subnet has been banned before
 		echo "Banned Subnet	$subnet"
-		echo "$subnet" >> $DenyFile
+		echo "ALL: $subnet" >> $DenyFile
 	else
 		echo "Banned IP	$1"
-		echo "$1" >> $DenyFile
+		echo "ALL: $1" >> $DenyFile
 	fi
 }
 
