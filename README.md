@@ -1,5 +1,6 @@
 # autoban
 A tiny shell script that listens to ssh logs and bans any IPs trying to log into root to stop bruteforce attacks. Legitimate logins into root (although they really shouldn't be enabled) will not result in bans, as will any failed attempts on different users.
+If multiple IPs from one subnet (with Mask 255.255.255.0) commit bannable offences, that subnet is blacklisted.
 
 ## Installation
 Before using the script make sure the IP(s) that you trust are in the */usr/hosts.allow* file to prevent you from locking yourself out accidentily.
