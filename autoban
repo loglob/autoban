@@ -1,36 +1,71 @@
 #!/bin/sh
-# this is where banned Ips are written to. Make sure this either is /etc/hosts.deny or is referenced in it. Make sure to add your own IP(s) to /etc/hosts.allow
-DenyFile="/etc/hosts.deny"
-# the name of the service your ssh server runs under. Usually sshd or ssh, find out by trying to view their journalctl logs
-SSHUnit="ssh"
+ScriptFolder=$(dirname $(readlink -f "$0"))
+ConfigPath="$ScriptFolder/autoban.conf"
 
+RED='\033[1;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Retrieves a setting from the config file
+readConfig()
+{
+	value=$(grep -x "$1=.*" "$ConfigPath" | tail -1 | cut -d"=" -f 2-)
+
+	# Prepend $ScriptFolder to a denypath value if it's given relative to the script folder
+	if test "$1" = "denypath" && echo "$value" | grep -qEv "^(\.\.?|~)?/.*$"
+	then
+		printf "$ScriptFolder/"
+	fi
+
+	echo "$value"
+}
+
+# Tries to ban an IP
 banIP()
 {
-	subnet="$(echo $1 | cut -d"." -f 1-3)."
-
-	if(grep -q "$subnet" "$DenyFile")
+	if test "$(tcpdmatch "$(readConfig banunit)" "$1" | tail -1 | cut -d" " -f 4)" = "denied"
 	then
-	# an IP on this subnet has been banned before
+		echo "${YELLOW}The IP $1 is already blacklistet, something may be misconfigured${NC}"
+		return 0
+	fi
+
+	subnet="$(echo $1 | cut -d"." -f 1-3)."
+	escSubnet="$(echo $subnet | sed 's/\./\\./g')"
+
+	if test "$(readConfig bansubnets)" = "true" && grep -Eq "$escSubnet[0-9]{1,3}$" "$(readConfig denypath)"
+	then
 		echo "Banned Subnet	$subnet"
-		echo "ALL: $subnet" >> $DenyFile
+		echo "$(readConfig banunit): $subnet" >> "$(readConfig denypath)"
 	else
 		echo "Banned IP	$1"
-		echo "ALL: $1" >> $DenyFile
+		echo "$(readConfig banunit): $1" >> "$(readConfig denypath)"
 	fi
 }
 
-if [ ! -f $DenyFile ]; then
-	touch $DenyFile
-	chmod 644 $DenyFile
+
+dPath=$(readConfig denypath)
+if test ! -f "$dPath"
+then
+	touch "$dPath"
+	chmod 644 "$dPath"
 fi
 
-journalctl -u "$SSHUnit" -f | while read i
+if test ! -r "$dPath" || test ! -w "$dPath"
+then
+	echo "${YELLOW}The deny file permissions aren't correct, trying to chmod...${NC}"
+
+	if chmod u+wr "$dPath" && test -r "$dPath" && test -w "$dPath"
+	then
+		echo "Fixed permissions"
+	else
+		echo "${RED}The given deny file is unusable${NC}"
+		exit
+	fi
+fi
+
+journalctl -u "$(readConfig unitname)" -f --since "now" | while read i
 do
 	msg=$(echo "$i" | cut -d" " -f 6-)
-	RED='\033[1;31m'
-	NC='\033[0m'
-
-	#echo $msg
 
 	case $msg in
 		"Failed password for root from "*)
