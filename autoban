@@ -25,7 +25,7 @@ banIP()
 {
 	if test "$(tcpdmatch "$(readConfig banunit)" "$1" | tail -1 | cut -d" " -f 4)" = "denied"
 	then
-		echo "${YELLOW}The IP $1 is already blacklistet, something may be misconfigured${NC}"
+		echo "${YELLOW}The session is outdated${NC}"
 		return 0
 	fi
 
