@@ -14,7 +14,7 @@ readConfig()
 	# Prepend $ScriptFolder to a denypath value if it's given relative to the script folder
 	if test "$1" = "denypath" && echo "$value" | grep -qEv "^(\.\.?|~)?/.*$"
 	then
-		printf "$ScriptFolder/"
+		echo "$ScriptFolder/"
 	fi
 
 	echo "$value"
@@ -69,8 +69,11 @@ do
 
 	case $msg in
 		"Failed password for root from "*)
-			echo "${RED}Detected root try${NC}"
-			banIP "$(echo $msg | cut -d" " -f 6)"
+			IP="$(echo $msg | cut -d" " -f 6)"
+			Country="$(geoiplookup "$IP" | cut -d" " -f 4-)"
+
+			echo "${RED}Detected root try from $IP ($Country)${NC}"
+			banIP "$IP"
 		;;
 	esac
 done
