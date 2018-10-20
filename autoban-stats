@@ -1,0 +1,58 @@
+#!/bin/sh
+ScriptFolder=$(dirname $(readlink -f "$0"))
+ConfigPath="$ScriptFolder/autoban.conf"
+
+# Retrieves a setting from the config file (Copied from the regular autoban script)
+readConfig()
+{
+	if [ ! -f "$ConfigPath" ]
+	then
+		>&2 echo "Missing config file"
+		exit 1
+	fi
+
+	value=$(grep -x "$1=.*" "$ConfigPath" | tail -1 | cut -d"=" -f 2-)
+
+	if [ -z "$value" ]
+	then
+		>&2 echo "Missing config entry for $1"
+		exit 2
+	fi
+
+	# Prepend $ScriptFolder to a denypath value if it's given relative to the script folder
+	if test "$1" = "denypath" && echo "$value" | grep -qEv "^(\.\.?|~)?/.*$"
+	then
+		printf "$ScriptFolder/"
+	fi
+
+	echo "$value"
+}
+
+dPath=$(readConfig denypath)
+if test ! -f "$dPath"
+then
+	>&2 echo "Missing the banned IP list"
+	exit 3
+fi
+
+All=$(grep -Ewo "[0-9]+\.[0-9]+\.[0-9]+\.([0-9]+)?" "$dPath")
+Subnets=$(echo "$All" | grep -x ".*\.")
+IPs=$(echo "$All" | grep -x ".*[^.]")
+
+echo "$(echo "$IPs" | wc -l) IPs and $(echo "$Subnets" | wc -l) Subnets are blacklisted"
+echo ""
+echo "Top 10 countries:"
+
+geoIPs=""
+
+for IP in $(echo "$IPs")
+do
+	geoIP=$(geoiplookup "$IP" | cut -d ':' -f 2- | cut -d ' ' -f 3-)
+	
+	if test "$geoIP" != "Address not found"
+	then
+		geoIPs="$geoIPs$geoIP\n"
+	fi
+done
+
+echo "$geoIPs" | sort | uniq -c | sort -nr | head
