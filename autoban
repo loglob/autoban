@@ -9,12 +9,24 @@ NC='\033[0m'
 # Retrieves a setting from the config file
 readConfig()
 {
+	if [ ! -f "$ConfigPath" ]
+	then
+		>&2 echo "Missing config file"
+		exit 1
+	fi
+
 	value=$(grep -x "$1=.*" "$ConfigPath" | tail -1 | cut -d"=" -f 2-)
+
+	if [ -z "$value" ]
+	then
+		>&2 echo "Missing config entry for $1"
+		exit 2
+	fi
 
 	# Prepend $ScriptFolder to a denypath value if it's given relative to the script folder
 	if test "$1" = "denypath" && echo "$value" | grep -qEv "^(\.\.?|~)?/.*$"
 	then
-		echo "$ScriptFolder/"
+		printf "$ScriptFolder/"
 	fi
 
 	echo "$value"
