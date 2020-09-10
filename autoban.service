@@ -1,0 +1,13 @@
+[Unit]
+	Description=Automatic IP banner
+	After=network-online.target
+	Wants=network-online.target
+
+[Service]
+	Type=simple
+	ExecStart=/srv/autoban/autoban
+	WorkingDirectory=/srv/autoban/
+
+[Install]
+	WantedBy=multi-user.target
+
