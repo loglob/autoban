@@ -35,7 +35,7 @@ readConfig()
 # Tries to ban an IP
 banIP()
 {
-	if test "$(tcpdmatch "$(readConfig banunit)" "$1" | tail -1 | cut -d" " -f 4)" = "denied"
+	if tcpdmatch "$(readConfig unitname)" "$1" | grep -q 'access: *denied'
 	then
 		echo "${YELLOW}The session is outdated${NC}"
 		return 0
